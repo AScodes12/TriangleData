@@ -437,8 +437,8 @@
                 const g = pixel[1];
                 const b = pixel[2];
 
-                // Format 6-digit hex color string (e.g. ff3300)
-                const hexColor = ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                // Format 6-digit hex color string WITH '#' prefix (e.g. #ff3300)
+                const hexColor = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
                 // Render vector preview on canvas
                 const colorStr = `rgb(${r},${g},${b})`;
