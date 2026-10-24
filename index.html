@@ -57,6 +57,18 @@
         .subtitle {
             color: var(--text-dim);
             font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .version-tag {
+            display: inline-block;
+            background-color: #dcfce7;
+            color: #15803d;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: 1px solid #bbf7d0;
         }
 
         .container {
@@ -262,6 +274,7 @@
         <header>
             <h1>Scratch Triangle Mesh Generator</h1>
             <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine[cite: 3].</div>
+            <div class="version-tag">✓ v3.5.1 - Optimized & Cleaned</div>
         </header>
 
         <div class="container">
@@ -272,9 +285,9 @@
             <div class="controls">
                 <div class="control-group">
                     <label for="pointCount">
-                        Mesh Density: <span id="pointVal">1,500</span> Points &bull; Output: <span id="lineCountVal">0</span> Triangles/Lines (Max 200k)[cite: 3]
+                        Mesh Density: <span id="pointVal">1,500</span> Points &bull; Output: <span id="lineCountVal">0</span> Triangles[cite: 3]
                     </label>
-                    <input id="pointCount" type="range" min="100" max="90000" step="100" value="1500">
+                    <input id="pointCount" type="range" min="100" max="25000" step="100" value="1500">
                 </div>
             </div>
 
@@ -325,11 +338,16 @@
         const mCtx = meshCanvas.getContext('2d');
         
         let activeImage = null;
+        let processingTimeout = null;
 
         imageLoader.addEventListener('change', handleImage, false);
         pointCountInput.addEventListener('input', () => {
             pointVal.innerText = Number(pointCountInput.value).toLocaleString();
-            if (activeImage) processImageMesh();
+            if (activeImage) {
+                // Debounce rapid slider dragging to prevent browser stuttering
+                clearTimeout(processingTimeout);
+                processingTimeout = setTimeout(processImageMesh, 50);
+            }
         });
 
         copyBtn.addEventListener('click', async () => {
@@ -390,8 +408,8 @@
             const data = imgData.data;
 
             const edgePoints = [];
-            for (let y = 2; y < 358; y += 3) {
-                for (let x = 2; x < 478; x += 3) {
+            for (let y = 2; y < 358; y += 4) {
+                for (let x = 2; x < 478; x += 4) {
                     const leftIdx = (y * 480 + (x - 1)) * 4;
                     const rightIdx = (y * 480 + (x + 1)) * 4;
                     const topIdx = ((y - 1) * 480 + x) * 4;
@@ -417,7 +435,7 @@
             // Fixed corner anchors
             points.push([0, 0], [480, 0], [0, 360], [480, 360]);
 
-            const borderDensity = Math.min(150, Math.max(15, Math.floor(Math.sqrt(numPoints))));
+            const borderDensity = Math.min(100, Math.max(15, Math.floor(Math.sqrt(numPoints))));
             for (let i = 0; i <= borderDensity; i++) {
                 const stepX = (480 / borderDensity) * i;
                 const stepY = (360 / borderDensity) * i;
@@ -450,6 +468,7 @@
             const triangles = delaunay.triangles;
             
             const rows = [];
+            const drawStrokes = triangles.length < 15000; // Skip individual outline strokes for massive point clouds to maintain performance
 
             for (let i = 0; i < triangles.length; i += 3) {
                 const p1_idx = triangles[i];
@@ -475,17 +494,20 @@
 
                 const colorStr = `rgb(${r},${g},${b})`;
                 mCtx.fillStyle = colorStr;
-                mCtx.strokeStyle = colorStr;
-                mCtx.lineWidth = 0.3;
                 mCtx.beginPath();
                 mCtx.moveTo(x1, y1);
                 mCtx.lineTo(x2, y2);
                 mCtx.lineTo(x3, y3);
                 mCtx.closePath();
                 mCtx.fill();
-                mCtx.stroke();
 
-                // FORCE PURE ROUNDED INTEGERS to prevent Scratch parsing bugs
+                if (drawStrokes) {
+                    mCtx.strokeStyle = colorStr;
+                    mCtx.lineWidth = 0.3;
+                    mCtx.stroke();
+                }
+
+                // Integer rounding mapping to Scratch Stage coordinate layout (-240 to 240, -180 to 180)
                 const sx1 = Math.round(x1 - 240);
                 const sy1 = Math.round(180 - y1);
                 const sx2 = Math.round(x2 - 240);
