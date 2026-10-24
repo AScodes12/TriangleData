@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scratch Vector Triangle Mesh Exporter</title>
+    <title>Scratch Triangle Mesh Tool</title>
     <!-- Include Delaunator library via jsDelivr CDN -->
     <script src="https://cdn.jsdelivr.net/npm/delaunator@5/delaunator.min.js"></script>
     <style>
@@ -58,17 +58,6 @@
             color: var(--text-dim);
             font-size: 1.05rem;
             margin-bottom: 8px;
-        }
-
-        .version-tag {
-            display: inline-block;
-            background-color: #dcfce7;
-            color: #15803d;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            border: 1px solid #bbf7d0;
         }
 
         .container {
@@ -238,43 +227,14 @@
         button.secondary:hover {
             background-color: #475569;
         }
-
-        .instructions {
-            text-align: left;
-            background-color: var(--surface);
-            padding: 25px 30px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            border-left: 5px solid var(--warning);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        }
-
-        .instructions h4 {
-            color: #b45309;
-            font-size: 1.25rem;
-            margin-bottom: 12px;
-        }
-
-        .instructions ol {
-            padding-left: 20px;
-            color: var(--text-dim);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .instructions strong {
-            color: var(--text);
-        }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
         <header>
-            <h1>Scratch Triangle Mesh Generator</h1>
-            <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine[cite: 3].</div>
-            <div class="version-tag">✓ v3.5.1 - Optimized & Cleaned</div>
+            <h1>Scratch Triangle Mesh Tool</h1>
+            <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine.</div>
         </header>
 
         <div class="container">
@@ -285,7 +245,7 @@
             <div class="controls">
                 <div class="control-group">
                     <label for="pointCount">
-                        Mesh Density: <span id="pointVal">1,500</span> Points &bull; Output: <span id="lineCountVal">0</span> Triangles[cite: 3]
+                        Mesh Density: <span id="pointVal">1,500</span> Points &bull; Output: <span id="lineCountVal">0</span> Triangles
                     </label>
                     <input id="pointCount" type="range" min="100" max="90000" step="100" value="1500">
                 </div>
@@ -310,16 +270,6 @@
                     <button id="downloadBtn" class="secondary">Download .txt File</button>
                 </div>
             </div>
-        </div>
-
-        <div class="instructions">
-            <h4>📋 How to Import to Scratch:</h4>
-            <ol>
-                <li>Upload an image, adjust the <strong>Mesh Density slider</strong>, and click <strong>Download .txt File</strong>[cite: 3].</li>
-                <li>In your Scratch project stage layout editor, right-click your empty <code>Raw_Data</code> list monitor and click <strong>Import</strong>[cite: 3].</li>
-                <li>Select your downloaded <code>mesh.txt</code> file[cite: 3].</li>
-                <li>Run your custom triangle filler block script loop to render the vector mesh instantly![cite: 3]</li>
-            </ol>
         </div>
     </div>
 
