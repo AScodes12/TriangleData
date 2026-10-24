@@ -98,7 +98,7 @@
             background: var(--surface-inner);
             padding: 18px 25px;
             border-radius: 12px;
-            max-width: 500px;
+            max-width: 550px;
             border: 1px solid var(--border);
         }
 
@@ -113,7 +113,8 @@
         .control-group label {
             font-weight: 600;
             color: var(--text);
-            font-size: 1rem;
+            font-size: 0.95rem;
+            text-align: center;
         }
 
         .control-group label span {
@@ -260,7 +261,7 @@
     <div class="wrapper">
         <header>
             <h1>Scratch Triangle Mesh Generator</h1>
-            <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine.</div>
+            <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine[cite: 3].</div>
         </header>
 
         <div class="container">
@@ -270,8 +271,10 @@
             
             <div class="controls">
                 <div class="control-group">
-                    <label for="pointCount">Mesh Density: <span id="pointVal">1,500</span> Points (Max 100k)</label>
-                    <input id="pointCount" type="range" min="100" max="100000" step="100" value="1500">
+                    <label for="pointCount">
+                        Mesh Density: <span id="pointVal">1,500</span> Points &bull; Output: <span id="lineCountVal">0</span> Triangles/Lines (Max 200k)[cite: 3]
+                    </label>
+                    <input id="pointCount" type="range" min="100" max="90000" step="100" value="1500">
                 </div>
             </div>
 
@@ -299,10 +302,10 @@
         <div class="instructions">
             <h4>📋 How to Import to Scratch:</h4>
             <ol>
-                <li>Upload an image, adjust the <strong>Mesh Density slider</strong> up to 100,000 points, and click <strong>Download .txt File</strong>.</li>
-                <li>In your Scratch project stage layout editor, right-click your empty <code>Raw_Data</code> list monitor and click <strong>Import</strong>.</li>
-                <li>Select your downloaded <code>mesh.txt</code> file.</li>
-                <li>Run your custom triangle filler block script loop to render the vector mesh instantly!</li>
+                <li>Upload an image, adjust the <strong>Mesh Density slider</strong> (keeping triangles under 200,000), and click <strong>Download .txt File</strong>[cite: 3].</li>
+                <li>In your Scratch project stage layout editor, right-click your empty <code>Raw_Data</code> list monitor and click <strong>Import</strong>[cite: 3].</li>
+                <li>Select your downloaded <code>mesh.txt</code> file[cite: 3].</li>
+                <li>Run your custom triangle filler block script loop to render the vector mesh instantly![cite: 3]</li>
             </ol>
         </div>
     </div>
@@ -311,6 +314,7 @@
         const imageLoader = document.getElementById('imageLoader');
         const pointCountInput = document.getElementById('pointCount');
         const pointVal = document.getElementById('pointVal');
+        const lineCountVal = document.getElementById('lineCountVal');
         const sourceCanvas = document.getElementById('sourceCanvas');
         const meshCanvas = document.getElementById('meshCanvas');
         const outputData = document.getElementById('outputData');
@@ -385,11 +389,9 @@
             const imgData = sCtx.getImageData(0, 0, 480, 360);
             const data = imgData.data;
 
-            // Generate edge density map (Sobel operator)
             const edgePoints = [];
             for (let y = 1; y < 359; y += 2) {
                 for (let x = 1; x < 479; x += 2) {
-                    const idx = (y * 480 + x) * 4;
                     const leftIdx = (y * 480 + (x - 1)) * 4;
                     const rightIdx = (y * 480 + (x + 1)) * 4;
                     const topIdx = ((y - 1) * 480 + x) * 4;
@@ -403,8 +405,7 @@
                                Math.abs(data[bottomIdx + 1] - data[topIdx + 1]) +
                                Math.abs(data[bottomIdx + 2] - data[topIdx + 2]);
 
-                    const edgeVal = gx + gy;
-                    if (edgeVal > 80) {
+                    if ((gx + gy) > 80) {
                         edgePoints.push([x, y]);
                     }
                 }
@@ -413,10 +414,8 @@
             const numPoints = parseInt(pointCountInput.value, 10);
             const points = [];
 
-            // Anchor four outer corners
             points.push([0, 0], [480, 0], [0, 360], [480, 360]);
 
-            // Outer border grid steps
             const borderDensity = Math.min(200, Math.max(20, Math.floor(Math.sqrt(numPoints))));
             for (let i = 0; i <= borderDensity; i++) {
                 const stepX = (480 / borderDensity) * i;
@@ -424,14 +423,12 @@
                 points.push([stepX, 0], [stepX, 360], [0, stepY], [480, stepY]);
             }
 
-            // Distribute points: 75% on edges for sharp detail, 25% across full surface
             const edgeTargetCount = Math.floor(numPoints * 0.75);
             const randomTargetCount = numPoints - edgeTargetCount;
 
             if (edgePoints.length > 0) {
                 for (let i = 0; i < edgeTargetCount; i++) {
                     const pt = edgePoints[Math.floor(Math.random() * edgePoints.length)];
-                    // Slight jitter to prevent overlapping coordinates
                     points.push([
                         Math.min(480, Math.max(0, pt[0] + (Math.random() - 0.5) * 1.5)),
                         Math.min(360, Math.max(0, pt[1] + (Math.random() - 0.5) * 1.5))
@@ -447,7 +444,6 @@
                 points.push([Math.random() * 480, Math.random() * 360]);
             }
 
-            // Flat arrays required by Delaunator index engine
             const flatPoints = points.flat();
             const delaunay = new Delaunator(flatPoints);
             const triangles = delaunay.triangles;
@@ -475,11 +471,10 @@
 
                 const hexColor = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 
-                // Render vector preview
                 const colorStr = `rgb(${r},${g},${b})`;
                 mCtx.fillStyle = colorStr;
                 mCtx.strokeStyle = colorStr;
-                mCtx.lineWidth = 0.5;
+                mCtx.lineWidth = 0.3;
                 mCtx.beginPath();
                 mCtx.moveTo(x1, y1);
                 mCtx.lineTo(x2, y2);
@@ -488,8 +483,6 @@
                 mCtx.fill();
                 mCtx.stroke();
 
-                // Convert to Scratch coordinates (-240 to 240, -180 to 180)
-                // Using sub-pixel precision to remove gaps between triangles in Scratch
                 const sx1 = (x1 - 240).toFixed(1);
                 const sy1 = (180 - y1).toFixed(1);
                 const sx2 = (x2 - 240).toFixed(1);
@@ -498,6 +491,15 @@
                 const sy3 = (180 - y3).toFixed(1);
 
                 scratchDataString += `${sx1}/${sy1}/${sx2}/${sy2}/${sx3}/${sy3}/${hexColor}\n`;
+            }
+
+            const totalTriangles = triangles.length / 3;
+            lineCountVal.innerText = totalTriangles.toLocaleString();
+            
+            if (totalTriangles > 200000) {
+                lineCountVal.style.color = '#ef4444';
+            } else {
+                lineCountVal.style.color = 'var(--accent)';
             }
 
             outputData.value = scratchDataString.trim();
