@@ -5,123 +5,258 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scratch Vector Triangle Mesh Exporter</title>
     <!-- Include Delaunator library via CDN to handle ultra-fast 2D triangulation meshes -->
-    <script src="https://unpkg.com"></script>
+    <script src="https://unpkg.com/delaunator@5.0.0/delaunator.min.js"></script>
     <style>
+        :root {
+            --bg: #1e1e2e;
+            --surface: #252636;
+            --surface-inner: #181825;
+            --accent: #89b4fa;
+            --accent-hover: #b4befe;
+            --text: #cdd6f4;
+            --text-dim: #a6adc8;
+            --success: #a6e3a1;
+            --warning: #fab387;
+            --border: #45475a;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #1e1e2e;
-            color: #cdd6f4;
-            max-width: 900px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
         }
-        h1 { color: #89b4fa; }
+
+        h1 { 
+            color: var(--accent);
+            margin-bottom: 5px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
         .container {
-            background-color: #313244;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
         }
-        input[type="file"], input[type="range"] {
-            margin: 15px 0;
+
+        .file-upload-wrapper {
+            margin-bottom: 25px;
         }
+
+        input[type="file"] {
+            background: var(--surface-inner);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+        }
+
         .controls {
             display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 25px auto;
+            background: var(--surface-inner);
+            padding: 15px 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            border: 1px solid var(--border);
         }
+
         .control-group {
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 100%;
+            gap: 10px;
         }
+
+        .control-group label {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
         #canvasContainer {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 30px;
             flex-wrap: wrap;
-            margin: 20px 0;
+            margin: 30px 0;
         }
+
+        .canvas-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--surface-inner);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .canvas-box h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            color: var(--text-dim);
+        }
+
         canvas {
-            border: 2px solid #45475a;
-            border-radius: 8px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
             background-color: #11111b;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             max-width: 100%;
+            height: auto;
         }
+
+        .output-section {
+            text-align: left;
+            margin-top: 25px;
+        }
+
+        .output-section h3 {
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
         textarea {
             width: 100%;
-            height: 150px;
-            background-color: #181825;
-            color: #a6e3a1;
-            border: 1px solid #45475a;
-            border-radius: 6px;
-            padding: 10px;
-            font-family: monospace;
+            height: 160px;
+            background-color: #11111b;
+            color: var(--success);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
             resize: vertical;
+            font-size: 0.9rem;
         }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+
         button {
-            background-color: #89b4fa;
+            background-color: var(--accent);
             color: #11111b;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 30px;
             font-size: 16px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(137, 180, 250, 0.3);
         }
-        button:hover { background-color: #b4befe; }
+
+        button:hover { 
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
         .instructions {
             text-align: left;
-            background-color: #181825;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #fab387;
+            background-color: var(--surface-inner);
+            padding: 20px 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--warning);
+        }
+
+        .instructions h4 {
+            margin-top: 0;
+            color: var(--warning);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-dim);
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .instructions strong {
+            color: var(--text);
         }
     </style>
 </head>
 <body>
 
-    <h1>Scratch Triangle Mesh Data Generator</h1>
-    <p>Convert any image into structural low-poly lines formatted perfectly for Scratch parsing layouts.</p>
+    <h1>Scratch Triangle Mesh Generator</h1>
+    <div class="subtitle">Convert images into clean low-poly vector text arrays for your Scratch script engine.</div>
 
     <div class="container">
-        <input type="file" id="imageLoader" accept="image/*">
+        <div class="file-upload-wrapper">
+            <input type="file" id="imageLoader" accept="image/*">
+        </div>
         
         <div class="controls">
             <div class="control-group">
-                <label for="pointCount">Triangle Density (Points): <span id="pointVal">300</span></label>
-                <input type="type" id="pointCount" type="range" min="50" max="1500" value="300">
+                <label for="pointCount">Mesh Density: <span id="pointVal">300</span> Points</label>
+                <input id="pointCount" type="range" min="50" max="1500" value="300">
             </div>
         </div>
 
         <div id="canvasContainer">
-            <div class="control-group">
+            <div class="canvas-box">
                 <h3>Target Preview</h3>
                 <canvas id="sourceCanvas" width="480" height="360"></canvas>
             </div>
-            <div class="control-group">
+            <div class="canvas-box">
                 <h3>Vector Mesh Preview</h3>
                 <canvas id="meshCanvas" width="480" height="360"></canvas>
             </div>
         </div>
 
-        <h3>Generated Scratch Raw Data Array</h3>
-        <textarea id="outputData" readonly placeholder="Your slash-separated row array text will appear here..."></textarea>
-        <button id="copyBtn">Copy Data Output</button>
+        <div class="output-section">
+            <h3>Generated Scratch Raw Data Array</h3>
+            <textarea id="outputData" readonly placeholder="Your slash-separated rows will appear here after uploading an image..."></textarea>
+            <div class="btn-container">
+                <button id="copyBtn">Copy Data Output</button>
+            </div>
+        </div>
     </div>
 
     <div class="instructions">
         <h4>📋 How to Import to Scratch:</h4>
         <ol>
-            <li>Upload your picture, adjust the structural points slider, and click <strong>Copy Data Output</strong>.</li>
-            <li>Open a text editor (like Notepad), paste the copied text values, and save it as <code>mesh.txt</code>.</li>
+            <li>Choose an image, tweak the <strong>Mesh Density slider</strong> to your liking, and click <strong>Copy Data Output</strong>.</li>
+            <li>Open a text editor (like Notepad), paste the copied text, and save the file as <code>mesh.txt</code>.</li>
             <li>In your Scratch project layout editor workspace, right-click your empty <code>Raw_Data</code> list box monitor screen array and click <strong>Import</strong>.</li>
-            <li>Select your <code>mesh.txt</code> file, then trigger your custom custom-block parsing engine loop script to render the vectors instantly!</li>
+            <li>Select your <code>mesh.txt</code> file, then trigger your custom block parsing engine loop script to render the vectors instantly!</li>
         </ol>
     </div>
 
@@ -145,23 +280,35 @@
             if (activeImage) processImageMesh();
         });
 
-        copyBtn.addEventListener('click', () => {
-            outputData.select();
-            document.execCommand('copy');
-            alert('Mesh text copied to clipboard successfully!');
+        copyBtn.addEventListener('click', async () => {
+            if (!outputData.value) {
+                alert('Please upload an image first!');
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(outputData.value);
+                alert('Mesh text copied to clipboard successfully!');
+            } catch (err) {
+                outputData.select();
+                document.execCommand('copy');
+                alert('Mesh text copied to clipboard successfully!');
+            }
         });
 
         function handleImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     activeImage = img;
                     processImageMesh();
-                }
+                };
                 img.src = event.target.result;
-            }
-            reader.readAsDataURL(e.target.files[0]);
+            };
+            reader.readAsDataURL(file);
         }
 
         function processImageMesh() {
@@ -171,16 +318,27 @@
             sCtx.clearRect(0, 0, 480, 360);
             mCtx.clearRect(0, 0, 480, 360);
 
-            // Fit original image onto Scratch dimensional standard screen (480x360)
+            // Fit original image onto standard Scratch proportions
             sCtx.drawImage(activeImage, 0, 0, 480, 360);
 
-            const numPoints = parseInt(pointCountInput.value);
+            const numPoints = parseInt(pointCountInput.value, 10);
             const points = [];
 
-            // Hardcode bounding box corner anchors to prevent structural edge clipping holes
-            points.push([0, 0], [480, 0], [0, 360], [480, 360]);
+            // Fixed bounding box corner anchors
+            points.push([0, 0]);
+            points.push([480, 0]);
+            points.push([0, 360]);
+            points.push([480, 360]);
 
-            // Distribute randomized points across the screen canvas
+            // Add standard boundary edge points
+            for (let i = 0; i < 10; i++) {
+                points.push([Math.random() * 480, 0]);
+                points.push([Math.random() * 480, 360]);
+                points.push([0, Math.random() * 360]);
+                points.push([480, Math.random() * 360]);
+            }
+
+            // Distribute randomized coordinate points
             for (let i = 0; i < numPoints; i++) {
                 points.push([Math.random() * 480, Math.random() * 360]);
             }
@@ -189,10 +347,9 @@
             const flatPoints = points.flat();
             const delaunay = Delaunator.from(flatPoints);
             const triangles = delaunay.triangles;
-
             let scratchDataString = "";
 
-            // Sample colors from center point clusters and render vector paths
+            // Sample color clusters and render vectors
             for (let i = 0; i < triangles.length; i += 3) {
                 const p1_idx = triangles[i];
                 const p2_idx = triangles[i + 1];
@@ -205,30 +362,34 @@
                 const x3 = points[p3_idx][0];
                 const y3 = points[p3_idx][1];
 
-                // Calculate geometry center bounding coordinates to extract point pixel sample data
-                const cx = Math.floor((x1 + x2 + x3) / 3);
-                const cy = Math.floor((y1 + y2 + y3) / 3);
-                
-                // Fetch RGB canvas array details directly from the source image frame
+                // Calculate center bounding coordinates for color sampling
+                const cx = Math.min(479, Math.max(0, Math.floor((x1 + x2 + x3) / 3)));
+                const cy = Math.min(359, Math.max(0, Math.floor((y1 + y2 + y3) / 3)));
+
+                // Fetch RGB values directly from source frame
                 const pixel = sCtx.getImageData(cx, cy, 1, 1).data;
                 const r = pixel[0];
                 const g = pixel[1];
                 const b = pixel[2];
 
-                // Encode traditional standard RGB components into standard base-10 numerical data
+                // Encode RGB values into base-10 numerical value for Scratch
                 const scratchColor = (r << 16) + (g << 8) + b;
 
-                // Render vector feedback geometry straight onto verification monitor window screen
-                mCtx.fillStyle = `rgb(${r},${g},${b})`;
+                // Render vector preview
+                const colorStr = `rgb(${r},${g},${b})`;
+                mCtx.fillStyle = colorStr;
+                mCtx.strokeStyle = colorStr;
+                mCtx.lineWidth = 0.5;
                 mCtx.beginPath();
                 mCtx.moveTo(x1, y1);
                 mCtx.lineTo(x2, y2);
                 mCtx.lineTo(x3, y3);
                 mCtx.closePath();
                 mCtx.fill();
+                mCtx.stroke();
 
-                // Convert points from browser coordinates (0 to 480, 0 to 360 top-down)
-                // into Scratch's native coordinate layout bounds (-240 to 240, -180 to 180 bottom-up)
+                // Convert browser canvas coordinates (0 to 480, 0 to 360) 
+                // to Scratch stage coordinates (-240 to 240, -180 to 180)
                 const sx1 = Math.round(x1 - 240);
                 const sy1 = Math.round(180 - y1);
                 const sx2 = Math.round(x2 - 240);
@@ -236,7 +397,7 @@
                 const sx3 = Math.round(x3 - 240);
                 const sy3 = Math.round(180 - y3);
 
-                // Compile formatted data pack row string split cleanly by non-comma slash parameters
+                // Compile formatted data row string
                 scratchDataString += `${sx1}/${sy1}/${sx2}/${sy2}/${sx3}/${sy3}/${scratchColor}\n`;
             }
 
