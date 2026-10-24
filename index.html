@@ -8,16 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/delaunator@5/delaunator.min.js"></script>
     <style>
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --surface-inner: #0f172a;
-            --accent: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --success: #4ade80;
-            --warning: #fb923c;
-            --border: #334155;
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --surface-inner: #f8fafc;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --text: #0f172a;
+            --text-dim: #64748b;
+            --success: #16a34a;
+            --warning: #d97706;
+            --border: #cbd5e1;
         }
 
         * {
@@ -63,7 +63,7 @@
             background-color: var(--surface);
             border-radius: 20px;
             padding: 35px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--border);
             margin-bottom: 30px;
         }
@@ -82,11 +82,12 @@
             color: var(--text);
             cursor: pointer;
             font-size: 0.95rem;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, background-color 0.2s;
         }
 
         input[type="file"]:hover {
             border-color: var(--accent);
+            background-color: #fff;
         }
 
         .controls {
@@ -97,7 +98,7 @@
             background: var(--surface-inner);
             padding: 18px 25px;
             border-radius: 12px;
-            max-width: 450px;
+            max-width: 500px;
             border: 1px solid var(--border);
         }
 
@@ -111,8 +112,13 @@
 
         .control-group label {
             font-weight: 600;
-            color: var(--accent);
+            color: var(--text);
             font-size: 1rem;
+        }
+
+        .control-group label span {
+            color: var(--accent);
+            font-weight: 700;
         }
 
         input[type="range"] {
@@ -151,8 +157,8 @@
         canvas {
             border: 2px solid var(--border);
             border-radius: 8px;
-            background-color: #000;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             max-width: 100%;
             height: auto;
         }
@@ -162,7 +168,7 @@
         }
 
         .output-section h3 {
-            color: var(--accent);
+            color: var(--text);
             margin-bottom: 12px;
             font-size: 1.2rem;
         }
@@ -171,7 +177,7 @@
             width: 100%;
             height: 180px;
             background-color: var(--surface-inner);
-            color: var(--success);
+            color: #047857;
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 15px;
@@ -191,20 +197,20 @@
 
         button {
             background-color: var(--accent);
-            color: #0f172a;
+            color: #ffffff;
             border: none;
             padding: 12px 28px;
             font-size: 15px;
-            font-weight: 700;
+            font-weight: 600;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
         button:hover { 
             background-color: var(--accent-hover);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
         button:active {
@@ -212,9 +218,8 @@
         }
 
         button.secondary {
-            background-color: #334155;
-            color: var(--text);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background-color: #64748b;
+            box-shadow: 0 4px 6px -1px rgba(100, 116, 139, 0.2);
         }
 
         button.secondary:hover {
@@ -228,11 +233,11 @@
             border-radius: 16px;
             border: 1px solid var(--border);
             border-left: 5px solid var(--warning);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         }
 
         .instructions h4 {
-            color: var(--warning);
+            color: #b45309;
             font-size: 1.25rem;
             margin-bottom: 12px;
         }
@@ -255,7 +260,7 @@
     <div class="wrapper">
         <header>
             <h1>Scratch Triangle Mesh Generator</h1>
-            <div class="subtitle">Convert images into clean low-poly vector arrays (`x1/y1/x2/y2/x3/y3/color`) for your Scratch engine.</div>
+            <div class="subtitle">Convert images into clean low-poly vector arrays (<code>x1/y1/x2/y2/x3/y3/color</code>) for your Scratch engine.</div>
         </header>
 
         <div class="container">
@@ -265,8 +270,8 @@
             
             <div class="controls">
                 <div class="control-group">
-                    <label for="pointCount">Mesh Density: <span id="pointVal">300</span> Points</label>
-                    <input id="pointCount" type="range" min="50" max="1500" value="300">
+                    <label for="pointCount">Mesh Density: <span id="pointVal">500</span> Points (Max 25k)</label>
+                    <input id="pointCount" type="range" min="50" max="25000" step="50" value="500">
                 </div>
             </div>
 
@@ -294,7 +299,7 @@
         <div class="instructions">
             <h4>📋 How to Import to Scratch:</h4>
             <ol>
-                <li>Upload an image, adjust the <strong>Mesh Density slider</strong>, and click <strong>Download .txt File</strong> (or copy the text).</li>
+                <li>Upload an image, adjust the <strong>Mesh Density slider</strong> up to 25,000 points, and click <strong>Download .txt File</strong>.</li>
                 <li>In your Scratch project stage layout editor, right-click your empty <code>Raw_Data</code> list monitor and click <strong>Import</strong>.</li>
                 <li>Select your downloaded <code>mesh.txt</code> file.</li>
                 <li>Run your custom triangle filler block script loop to render the vector mesh instantly!</li>
@@ -319,7 +324,7 @@
 
         imageLoader.addEventListener('change', handleImage, false);
         pointCountInput.addEventListener('input', () => {
-            pointVal.innerText = pointCountInput.value;
+            pointVal.innerText = Number(pointCountInput.value).toLocaleString();
             if (activeImage) processImageMesh();
         });
 
@@ -389,15 +394,16 @@
             points.push([0, 360]);
             points.push([480, 360]);
 
-            // Add boundary edge points
-            for (let i = 0; i < 10; i++) {
+            // Add boundary edge points for higher density support
+            const edgeSteps = Math.min(50, Math.max(10, Math.floor(numPoints / 100)));
+            for (let i = 0; i < edgeSteps; i++) {
                 points.push([Math.random() * 480, 0]);
                 points.push([Math.random() * 480, 360]);
                 points.push([0, Math.random() * 360]);
                 points.push([480, Math.random() * 360]);
             }
 
-            // Distribute randomized coordinate points
+            // Distribute randomized coordinate points up to user target
             for (let i = 0; i < numPoints; i++) {
                 points.push([Math.random() * 480, Math.random() * 360]);
             }
@@ -438,7 +444,7 @@
                 const colorStr = `rgb(${r},${g},${b})`;
                 mCtx.fillStyle = colorStr;
                 mCtx.strokeStyle = colorStr;
-                mCtx.lineWidth = 0.5;
+                mCtx.lineWidth = 0.3;
                 mCtx.beginPath();
                 mCtx.moveTo(x1, y1);
                 mCtx.lineTo(x2, y2);
