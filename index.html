@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Vector Triangle Mesh Exporter</title>
+    <!-- Include Delaunator library via CDN to handle ultra-fast 2D triangulation meshes -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #89b4fa; }
+        .container {
+            background-color: #313244;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        input[type="file"], input[type="range"] {
+            margin: 15px 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #canvasContainer {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 2px solid #45475a;
+            border-radius: 8px;
+            background-color: #11111b;
+            max-width: 100%;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            background-color: #181825;
+            color: #a6e3a1;
+            border: 1px solid #45475a;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: monospace;
+            resize: vertical;
+        }
+        button {
+            background-color: #89b4fa;
+            color: #11111b;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #b4befe; }
+        .instructions {
+            text-align: left;
+            background-color: #181825;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #fab387;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Scratch Triangle Mesh Data Generator</h1>
+    <p>Convert any image into structural low-poly lines formatted perfectly for Scratch parsing layouts.</p>
+
+    <div class="container">
+        <input type="file" id="imageLoader" accept="image/*">
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="pointCount">Triangle Density (Points): <span id="pointVal">300</span></label>
+                <input type="type" id="pointCount" type="range" min="50" max="1500" value="300">
+            </div>
+        </div>
+
+        <div id="canvasContainer">
+            <div class="control-group">
+                <h3>Target Preview</h3>
+                <canvas id="sourceCanvas" width="480" height="360"></canvas>
+            </div>
+            <div class="control-group">
+                <h3>Vector Mesh Preview</h3>
+                <canvas id="meshCanvas" width="480" height="360"></canvas>
+            </div>
+        </div>
+
+        <h3>Generated Scratch Raw Data Array</h3>
+        <textarea id="outputData" readonly placeholder="Your slash-separated row array text will appear here..."></textarea>
+        <button id="copyBtn">Copy Data Output</button>
+    </div>
+
+    <div class="instructions">
+        <h4>📋 How to Import to Scratch:</h4>
+        <ol>
+            <li>Upload your picture, adjust the structural points slider, and click <strong>Copy Data Output</strong>.</li>
+            <li>Open a text editor (like Notepad), paste the copied text values, and save it as <code>mesh.txt</code>.</li>
+            <li>In your Scratch project layout editor workspace, right-click your empty <code>Raw_Data</code> list box monitor screen array and click <strong>Import</strong>.</li>
+            <li>Select your <code>mesh.txt</code> file, then trigger your custom custom-block parsing engine loop script to render the vectors instantly!</li>
+        </ol>
+    </div>
+
+    <script>
+        const imageLoader = document.getElementById('imageLoader');
+        const pointCountInput = document.getElementById('pointCount');
+        const pointVal = document.getElementById('pointVal');
+        const sourceCanvas = document.getElementById('sourceCanvas');
+        const meshCanvas = document.getElementById('meshCanvas');
+        const outputData = document.getElementById('outputData');
+        const copyBtn = document.getElementById('copyBtn');
+
+        const sCtx = sourceCanvas.getContext('2d');
+        const mCtx = meshCanvas.getContext('2d');
+        
+        let activeImage = null;
+
+        imageLoader.addEventListener('change', handleImage, false);
+        pointCountInput.addEventListener('input', () => {
+            pointVal.innerText = pointCountInput.value;
+            if (activeImage) processImageMesh();
+        });
+
+        copyBtn.addEventListener('click', () => {
+            outputData.select();
+            document.execCommand('copy');
+            alert('Mesh text copied to clipboard successfully!');
+        });
+
+        function handleImage(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    activeImage = img;
+                    processImageMesh();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function processImageMesh() {
+            if (!activeImage) return;
+
+            // Clear canvases
+            sCtx.clearRect(0, 0, 480, 360);
+            mCtx.clearRect(0, 0, 480, 360);
+
+            // Fit original image onto Scratch dimensional standard screen (480x360)
+            sCtx.drawImage(activeImage, 0, 0, 480, 360);
+
+            const numPoints = parseInt(pointCountInput.value);
+            const points = [];
+
+            // Hardcode bounding box corner anchors to prevent structural edge clipping holes
+            points.push([0, 0], [480, 0], [0, 360], [480, 360]);
+
+            // Distribute randomized points across the screen canvas
+            for (let i = 0; i < numPoints; i++) {
+                points.push([Math.random() * 480, Math.random() * 360]);
+            }
+
+            // Flat arrays required by Delaunator index engine
+            const flatPoints = points.flat();
+            const delaunay = Delaunator.from(flatPoints);
+            const triangles = delaunay.triangles;
+
+            let scratchDataString = "";
+
+            // Sample colors from center point clusters and render vector paths
+            for (let i = 0; i < triangles.length; i += 3) {
+                const p1_idx = triangles[i];
+                const p2_idx = triangles[i + 1];
+                const p3_idx = triangles[i + 2];
+
+                const x1 = points[p1_idx][0];
+                const y1 = points[p1_idx][1];
+                const x2 = points[p2_idx][0];
+                const y2 = points[p2_idx][1];
+                const x3 = points[p3_idx][0];
+                const y3 = points[p3_idx][1];
+
+                // Calculate geometry center bounding coordinates to extract point pixel sample data
+                const cx = Math.floor((x1 + x2 + x3) / 3);
+                const cy = Math.floor((y1 + y2 + y3) / 3);
+                
+                // Fetch RGB canvas array details directly from the source image frame
+                const pixel = sCtx.getImageData(cx, cy, 1, 1).data;
+                const r = pixel[0];
+                const g = pixel[1];
+                const b = pixel[2];
+
+                // Encode traditional standard RGB components into standard base-10 numerical data
+                const scratchColor = (r << 16) + (g << 8) + b;
+
+                // Render vector feedback geometry straight onto verification monitor window screen
+                mCtx.fillStyle = `rgb(${r},${g},${b})`;
+                mCtx.beginPath();
+                mCtx.moveTo(x1, y1);
+                mCtx.lineTo(x2, y2);
+                mCtx.lineTo(x3, y3);
+                mCtx.closePath();
+                mCtx.fill();
+
+                // Convert points from browser coordinates (0 to 480, 0 to 360 top-down)
+                // into Scratch's native coordinate layout bounds (-240 to 240, -180 to 180 bottom-up)
+                const sx1 = Math.round(x1 - 240);
+                const sy1 = Math.round(180 - y1);
+                const sx2 = Math.round(x2 - 240);
+                const sy2 = Math.round(180 - y2);
+                const sx3 = Math.round(x3 - 240);
+                const sy3 = Math.round(180 - y3);
+
+                // Compile formatted data pack row string split cleanly by non-comma slash parameters
+                scratchDataString += `${sx1}/${sy1}/${sx2}/${sy2}/${sx3}/${sy3}/${scratchColor}\n`;
+            }
+
+            outputData.value = scratchDataString.trim();
+        }
+    </script>
+</body>
+</html>
