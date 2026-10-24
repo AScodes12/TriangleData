@@ -302,7 +302,7 @@
         <div class="instructions">
             <h4>📋 How to Import to Scratch:</h4>
             <ol>
-                <li>Upload an image, adjust the <strong>Mesh Density slider</strong> (keeping triangles under 200,000), and click <strong>Download .txt File</strong>[cite: 3].</li>
+                <li>Upload an image, adjust the <strong>Mesh Density slider</strong>, and click <strong>Download .txt File</strong>[cite: 3].</li>
                 <li>In your Scratch project stage layout editor, right-click your empty <code>Raw_Data</code> list monitor and click <strong>Import</strong>[cite: 3].</li>
                 <li>Select your downloaded <code>mesh.txt</code> file[cite: 3].</li>
                 <li>Run your custom triangle filler block script loop to render the vector mesh instantly![cite: 3]</li>
@@ -390,8 +390,8 @@
             const data = imgData.data;
 
             const edgePoints = [];
-            for (let y = 1; y < 359; y += 2) {
-                for (let x = 1; x < 479; x += 2) {
+            for (let y = 2; y < 358; y += 3) {
+                for (let x = 2; x < 478; x += 3) {
                     const leftIdx = (y * 480 + (x - 1)) * 4;
                     const rightIdx = (y * 480 + (x + 1)) * 4;
                     const topIdx = ((y - 1) * 480 + x) * 4;
@@ -405,7 +405,7 @@
                                Math.abs(data[bottomIdx + 1] - data[topIdx + 1]) +
                                Math.abs(data[bottomIdx + 2] - data[topIdx + 2]);
 
-                    if ((gx + gy) > 80) {
+                    if ((gx + gy) > 70) {
                         edgePoints.push([x, y]);
                     }
                 }
@@ -414,9 +414,10 @@
             const numPoints = parseInt(pointCountInput.value, 10);
             const points = [];
 
+            // Fixed corner anchors
             points.push([0, 0], [480, 0], [0, 360], [480, 360]);
 
-            const borderDensity = Math.min(200, Math.max(20, Math.floor(Math.sqrt(numPoints))));
+            const borderDensity = Math.min(150, Math.max(15, Math.floor(Math.sqrt(numPoints))));
             for (let i = 0; i <= borderDensity; i++) {
                 const stepX = (480 / borderDensity) * i;
                 const stepY = (360 / borderDensity) * i;
@@ -430,8 +431,8 @@
                 for (let i = 0; i < edgeTargetCount; i++) {
                     const pt = edgePoints[Math.floor(Math.random() * edgePoints.length)];
                     points.push([
-                        Math.min(480, Math.max(0, pt[0] + (Math.random() - 0.5) * 1.5)),
-                        Math.min(360, Math.max(0, pt[1] + (Math.random() - 0.5) * 1.5))
+                        Math.min(480, Math.max(0, pt[0] + (Math.random() - 0.5) * 1)),
+                        Math.min(360, Math.max(0, pt[1] + (Math.random() - 0.5) * 1))
                     ]);
                 }
             } else {
@@ -447,7 +448,8 @@
             const flatPoints = points.flat();
             const delaunay = new Delaunator(flatPoints);
             const triangles = delaunay.triangles;
-            let scratchDataString = "";
+            
+            const rows = [];
 
             for (let i = 0; i < triangles.length; i += 3) {
                 const p1_idx = triangles[i];
@@ -483,17 +485,18 @@
                 mCtx.fill();
                 mCtx.stroke();
 
-                const sx1 = (x1 - 240).toFixed(1);
-                const sy1 = (180 - y1).toFixed(1);
-                const sx2 = (x2 - 240).toFixed(1);
-                const sy2 = (180 - y2).toFixed(1);
-                const sx3 = (x3 - 240).toFixed(1);
-                const sy3 = (180 - y3).toFixed(1);
+                // Convert to Scratch coordinates as clean rounded integers
+                const sx1 = Math.round(x1 - 240);
+                const sy1 = Math.round(180 - y1);
+                const sx2 = Math.round(x2 - 240);
+                const sy2 = Math.round(180 - y2);
+                const sx3 = Math.round(x3 - 240);
+                const sy3 = Math.round(180 - y3);
 
-                scratchDataString += `${sx1}/${sy1}/${sx2}/${sy2}/${sx3}/${sy3}/${hexColor}\n`;
+                rows.push(`${sx1}/${sy1}/${sx2}/${sy2}/${sx3}/${sy3}/${hexColor}`);
             }
 
-            const totalTriangles = triangles.length / 3;
+            const totalTriangles = rows.length;
             lineCountVal.innerText = totalTriangles.toLocaleString();
             
             if (totalTriangles > 200000) {
@@ -502,7 +505,8 @@
                 lineCountVal.style.color = 'var(--accent)';
             }
 
-            outputData.value = scratchDataString.trim();
+            // Join with clean newlines and ensure no trailing empty lines
+            outputData.value = rows.join('\n');
         }
     </script>
 </body>
